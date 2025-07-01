@@ -49,7 +49,7 @@ function InfoButton() {
               1. Configura tu Access Token (se guarda automáticamente)<br />
               2. Selecciona una tarjeta de prueba<br />
               3. Configura el estado de prueba y datos del titular<br />
-              4. Presiona "Tokenizar Tarjeta" para generar el token
+              4. Presiona &quot;Tokenizar Tarjeta&quot; para generar el token
             </p>
             <p>
               <strong>Tecnologías:</strong><br />
@@ -293,7 +293,7 @@ export default function Home() {
                   </svg>
                 </div>
                 <h3 className="text-base font-medium text-gray-900 mb-2">
-                  Completa el formulario y presiona "Generar Token" para ver los resultados aquí.
+                  Completa el formulario y presiona &quot;Generar Token&quot; para ver los resultados aquí.
                 </h3>
                 <p className="text-gray-500 text-sm">
                   Los resultados de la tokenización aparecerán en este espacio.
