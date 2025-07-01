@@ -26,16 +26,28 @@ export default function CardSelector({
   onDocNumberChange
 }: CardSelectorProps) {
   const [isCardDropdownOpen, setIsCardDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isStateDropdownOpen, setIsStateDropdownOpen] = useState(false);
+  const [isDocTypeDropdownOpen, setIsDocTypeDropdownOpen] = useState(false);
+  
+  const cardDropdownRef = useRef<HTMLDivElement>(null);
+  const stateDropdownRef = useRef<HTMLDivElement>(null);
+  const docTypeDropdownRef = useRef<HTMLDivElement>(null);
 
   const currentCard = TEST_CARDS.find(card => card.id === selectedCard);
   const currentState = TEST_STATES.find(state => state.code === selectedState);
+  const currentDocType = DOC_TYPES.find(type => type.value === docType);
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (cardDropdownRef.current && !cardDropdownRef.current.contains(event.target as Node)) {
         setIsCardDropdownOpen(false);
+      }
+      if (stateDropdownRef.current && !stateDropdownRef.current.contains(event.target as Node)) {
+        setIsStateDropdownOpen(false);
+      }
+      if (docTypeDropdownRef.current && !docTypeDropdownRef.current.contains(event.target as Node)) {
+        setIsDocTypeDropdownOpen(false);
       }
     };
 
@@ -72,9 +84,61 @@ export default function CardSelector({
     }
   };
 
+  const getStateIcon = (code: string) => {
+    switch (code) {
+      case 'APRO':
+        return (
+          <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+            ✓
+          </div>
+        );
+      case 'OTHE':
+      case 'CALL':
+      case 'FUND':
+      case 'SECU':
+      case 'EXPI':
+      case 'FORM':
+        return (
+          <div className="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+            ✕
+          </div>
+        );
+      case 'CONT':
+        return (
+          <div className="w-10 h-10 bg-yellow-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+            ⏱
+          </div>
+        );
+      default:
+        return (
+          <div className="w-10 h-10 bg-gray-400 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+            ?
+          </div>
+        );
+    }
+  };
+
+  const getDocTypeIcon = (type: string) => {
+    return (
+      <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+        ID
+      </div>
+    );
+  };
+
   const handleCardSelect = (card: TestCard) => {
     onCardChange(card.id);
     setIsCardDropdownOpen(false);
+  };
+
+  const handleStateSelect = (state: TestState) => {
+    onStateChange(state.code);
+    setIsStateDropdownOpen(false);
+  };
+
+  const handleDocTypeSelect = (docType: string) => {
+    onDocTypeChange(docType);
+    setIsDocTypeDropdownOpen(false);
   };
 
   return (
@@ -101,7 +165,7 @@ export default function CardSelector({
           <span className="text-red-500 ml-1">*</span>
         </label>
         
-        <div className="relative" ref={dropdownRef}>
+        <div className="relative" ref={cardDropdownRef}>
           <button
             type="button"
             onClick={() => setIsCardDropdownOpen(!isCardDropdownOpen)}
@@ -162,61 +226,148 @@ export default function CardSelector({
             </div>
           )}
         </div>
+        
+        {/* Card Details when selected */}
+        {currentCard && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="font-medium text-blue-800">Fecha de vencimiento:</span>
+                <div className="text-blue-600 font-mono">{currentCard.expMonth}/{currentCard.expYear}</div>
+              </div>
+              <div>
+                <span className="font-medium text-blue-800">Código de seguridad:</span>
+                <div className="text-blue-600 font-mono">{currentCard.cvv}</div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Test State Selection */}
+      {/* Custom State Dropdown */}
       <div className="space-y-2">
         <label className="block text-sm font-medium text-gray-700">
           Estado de Prueba (Nombre del Titular)
           <span className="text-red-500 ml-1">*</span>
         </label>
         
-        <select
-          value={selectedState}
-          onChange={(e) => onStateChange(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-        >
-          <option value="">Seleccionar estado...</option>
-          {TEST_STATES.map((state) => (
-            <option key={state.code} value={state.code}>
-              {state.code} - {state.name}
-            </option>
-          ))}
-        </select>
+        <div className="relative" ref={stateDropdownRef}>
+          <button
+            type="button"
+            onClick={() => setIsStateDropdownOpen(!isStateDropdownOpen)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-left flex items-center justify-between"
+          >
+            {currentState ? (
+              <div className="flex items-center gap-3">
+                {getStateIcon(currentState.code)}
+                <div>
+                  <div className="font-medium text-gray-900">
+                    {currentState.code} - {currentState.name}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {currentState.description}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <span className="text-gray-500">Selecciona un estado de prueba</span>
+            )}
+            <svg
+              className={`w-5 h-5 text-gray-400 transition-transform ${isStateDropdownOpen ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
 
-        {currentState && (
-          <div className="text-xs text-gray-600 bg-blue-50 p-2 rounded">
-            <strong>{currentState.name}:</strong> {currentState.description}
-          </div>
-        )}
-        
-        <div className="text-xs text-gray-500">
-          <span className="font-medium">Códigos disponibles:</span> APRO (aprobado), OTHE (rechazado), CONT (pendiente)
+          {isStateDropdownOpen && (
+            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+              {TEST_STATES.map((state) => (
+                <button
+                  key={state.code}
+                  type="button"
+                  onClick={() => handleStateSelect(state)}
+                  className="w-full px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none flex items-center gap-3 text-left border-b border-gray-100 last:border-b-0"
+                >
+                  {getStateIcon(state.code)}
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">
+                      {state.code} - {state.name}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {state.description}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Document Information */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="space-y-1">
+        {/* Custom Doc Type Dropdown */}
+        <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">
             Tipo de Documento
             <span className="text-red-500 ml-1">*</span>
           </label>
-          <select
-            value={docType}
-            onChange={(e) => onDocTypeChange(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-          >
-            <option value="">Seleccionar...</option>
-            {DOC_TYPES.map((type) => (
-              <option key={type.value} value={type.value}>
-                {type.label}
-              </option>
-            ))}
-          </select>
+          
+          <div className="relative" ref={docTypeDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setIsDocTypeDropdownOpen(!isDocTypeDropdownOpen)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-left flex items-center justify-between"
+            >
+              {currentDocType ? (
+                <div className="flex items-center gap-3">
+                  {getDocTypeIcon(currentDocType.value)}
+                  <div>
+                    <div className="font-medium text-gray-900 text-sm">
+                      {currentDocType.value}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <span className="text-gray-500 text-sm">Seleccionar...</span>
+              )}
+              <svg
+                className={`w-4 h-4 text-gray-400 transition-transform ${isDocTypeDropdownOpen ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {isDocTypeDropdownOpen && (
+              <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+                {DOC_TYPES.map((type) => (
+                  <button
+                    key={type.value}
+                    type="button"
+                    onClick={() => handleDocTypeSelect(type.value)}
+                    className="w-full px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none flex items-center gap-3 text-left border-b border-gray-100 last:border-b-0"
+                  >
+                    {getDocTypeIcon(type.value)}
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900 text-sm">
+                        {type.label}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="space-y-1 sm:col-span-2">
+        {/* Document Number Input */}
+        <div className="space-y-2 sm:col-span-2">
           <label className="block text-sm font-medium text-gray-700">
             Número de Documento
             <span className="text-red-500 ml-1">*</span>
@@ -226,7 +377,7 @@ export default function CardSelector({
             value={docNumber}
             onChange={(e) => onDocNumberChange(e.target.value.replace(/\D/g, ''))}
             placeholder="12345678"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
       </div>
