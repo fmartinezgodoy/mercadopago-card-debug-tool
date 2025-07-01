@@ -12,28 +12,23 @@ Una herramienta de debugging para tokenizar tarjetas de prueba de MercadoPago de
 - ✅ **Copia de resultados**: Copia fácil de tokens y datos de pago
 - ✅ **Validaciones**: Validación de access tokens y datos de entrada
 
-## Stack Tecnológico
-
-- **Next.js 14+** con App Router
-- **TypeScript** para type safety
-- **Tailwind CSS** para estilos
-- **Server Actions** para tokenización
-- **SDK oficial de MercadoPago** (v2.8.0)
-
 ## Instalación
 
 1. Clona el repositorio:
+
 ```bash
 git clone <repository-url>
 cd mercadopago-card-debug-tool
 ```
 
 2. Instala las dependencias:
+
 ```bash
 npm install
 ```
 
 3. Ejecuta el servidor de desarrollo:
+
 ```bash
 npm run dev
 ```
@@ -51,11 +46,13 @@ Ingresa tu access token de MercadoPago (debe comenzar con `TEST-` para testing o
 Elige entre las tarjetas predefinidas:
 
 **Tarjetas de Crédito:**
+
 - Mastercard: 5031 7557 3453 0604
-- Visa: 4509 9535 6623 3704  
+- Visa: 4509 9535 6623 3704
 - American Express: 3711 803032 57522
 
 **Tarjetas de Débito:**
+
 - Mastercard: 5287 3383 1025 3304
 - Visa: 4002 7686 9439 5619
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { TokenizeResponse } from '@/lib/types';
 import { getCurrentTimestamp, formatJSON } from '@/lib/utils';
 
@@ -22,21 +22,27 @@ interface MercadoPagoTokenizerProps {
   };
   docType: string;
   docNumber: string;
+  shouldGenerate: boolean;
   onTokenGenerated: (result: TokenizeResponse) => void;
   onLoading: (loading: boolean) => void;
 }
 
-export default function MercadoPagoTokenizer({
+export interface MercadoPagoTokenizerRef {
+  generateToken: () => Promise<void>;
+}
+
+const MercadoPagoTokenizer = forwardRef<MercadoPagoTokenizerRef, MercadoPagoTokenizerProps>(({
   accessToken,
   selectedCard,
   docType,
   docNumber,
+  shouldGenerate,
   onTokenGenerated,
   onLoading
-}: MercadoPagoTokenizerProps) {
+}, ref) => {
   const [mpInstance, setMpInstance] = useState<any>(null);
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
-  const [hasTokenized, setHasTokenized] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const cardNumberRef = useRef<any>(null);
   const expirationDateRef = useRef<any>(null);
   const securityCodeRef = useRef<any>(null);
@@ -93,6 +99,7 @@ export default function MercadoPagoTokenizer({
       return;
     }
 
+    setIsProcessing(true);
     onLoading(true);
 
     try {
@@ -183,76 +190,31 @@ export default function MercadoPagoTokenizer({
         error: `Tokenization failed: ${errorMessage}`
       });
     } finally {
+      setIsProcessing(false);
       onLoading(false);
     }
   }, [mpInstance, selectedCard, docType, docNumber, onTokenGenerated, onLoading]);
 
-  // Reset tokenization state when card selection changes
+  // Expose generateToken function through ref
+  useImperativeHandle(ref, () => ({
+    generateToken
+  }), [generateToken]);
+
+  // Generate token when shouldGenerate becomes true
   useEffect(() => {
-    setHasTokenized(false);
-  }, [selectedCard.number, selectedCard.holderName, docType, docNumber]);
+    if (shouldGenerate && mpInstance && !isProcessing) {
+      generateToken();
+    }
+  }, [shouldGenerate, mpInstance, isProcessing, generateToken]);
 
-  // Auto-generate token when MP instance is ready (only once per card selection)
-  useEffect(() => {
-    if (!mpInstance || !selectedCard.number || hasTokenized) return;
-
-    // Auto-generate token immediately
-    const autoGenerateToken = async () => {
-      setHasTokenized(true);
-      await generateToken();
-    };
-
-    // Small delay to ensure MP is fully initialized
-    const timer = setTimeout(autoGenerateToken, 500);
-    return () => clearTimeout(timer);
-  }, [mpInstance, selectedCard.number, hasTokenized, generateToken]);
-
+  // Return the SDK loading state
   if (!mpInstance) {
-    return (
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-center gap-3">
-          <svg className="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <span className="text-blue-800 font-medium">Cargando SDK de MercadoPago...</span>
-        </div>
-      </div>
-    );
+    return null; // Don't render anything when SDK is not loaded, parent will handle the display
   }
 
-  if (hasTokenized) {
-    return (
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-        <div className="flex items-center gap-3">
-          <svg className="h-5 w-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-          </svg>
-          <span className="text-green-800 font-medium">
-            Token generado para {selectedCard.number.substring(0, 4)}****{selectedCard.number.slice(-4)}
-          </span>
-        </div>
-        <p className="text-sm text-green-700 mt-2">
-          Cambia la configuración arriba para generar un nuevo token.
-        </p>
-      </div>
-    );
-  }
+  return null; // This component doesn't render anything visible
+});
 
-  return (
-    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-      <div className="flex items-center gap-3">
-        <svg className="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        <span className="text-blue-800 font-medium">
-          Generando token para {selectedCard.number.substring(0, 4)}****{selectedCard.number.slice(-4)}...
-        </span>
-      </div>
-      <p className="text-sm text-blue-700 mt-2">
-        Enviando datos a MercadoPago automáticamente.
-      </p>
-    </div>
-  );
-}
+MercadoPagoTokenizer.displayName = 'MercadoPagoTokenizer';
+
+export default MercadoPagoTokenizer;
